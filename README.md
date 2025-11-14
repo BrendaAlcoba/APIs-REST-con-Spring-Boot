@@ -49,6 +49,7 @@ La aplicación implementa una arquitectura en capas profesional y utiliza una ba
 ![Creacion_producto1.png](images/Creacion_producto1.png)
 ![Creacion_producto2.png](images/Creacion_producto2.png)
 2. Listado de productos
+
    Se muestra el resultado del endpoint GET /api/productos, retornando todos los productos almacenados en la base de datos H2.
 ![ListarProd1.png](images/ListarProd1.png)
 ![Listarprod2.png](images/Listarprod2.png)
@@ -78,7 +79,8 @@ Obtención de la tabla de productos:
 
 
 
-☑️ Conclusiones Personales
+## **☑️ Conclusiones Personales**
+
 Durante el desarrollo de este trabajo práctico pude comprender de manera más profunda cómo se estructura y funciona una API REST con Spring Boot. No solo aprendí a implementar operaciones CRUD, 
 sino también la importancia de separar responsabilidades utilizando DTOs, aplicar validaciones adecuadas y manejar errores de forma centralizada para ofrecer respuestas claras al cliente. 
 Además, integrar Swagger fue fundamental para visualizar y documentar todo el funcionamiento de la API de forma más profesional.

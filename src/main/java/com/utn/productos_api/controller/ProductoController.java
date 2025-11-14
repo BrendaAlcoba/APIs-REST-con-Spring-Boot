@@ -6,29 +6,38 @@ import com.utn.productos_api.dto.ProductoResponseDTO;
 import com.utn.productos_api.model.Categoria;
 import com.utn.productos_api.model.Producto;
 import com.utn.productos_api.service.ProductoService;
+
 import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
-// Define como controlador REST
 @RestController
-// Define la ruta base para todos los endpoints
 @RequestMapping("/api/productos")
+@Tag(name = "Gestión de Productos",
+        description = "Endpoints para la creación, consulta y modificación de productos de e-commerce.")
 public class ProductoController {
 
     private final ProductoService service;
 
-    // Inyección de dependencias por constructor
     public ProductoController(ProductoService service) {
         this.service = service;
     }
 
+    // --------------------------------------------------------------------------------------
+    // CONVERSIONES ENTRE ENTIDAD <-> DTO
+    // --------------------------------------------------------------------------------------
 
-    // Convierte Producto (Model) a ProductoResponseDTO
     private ProductoResponseDTO convertToDto(Producto producto) {
         ProductoResponseDTO dto = new ProductoResponseDTO();
         dto.setId(producto.getId());
@@ -40,7 +49,6 @@ public class ProductoController {
         return dto;
     }
 
-    // Convierte ProductoDTO a Producto (Model)
     private Producto convertToEntity(ProductoDTO dto) {
         Producto producto = new Producto();
         producto.setNombre(dto.getNombre());
@@ -51,107 +59,111 @@ public class ProductoController {
         return producto;
     }
 
+    // ======================================================================================
+    // ENDPOINTS
+    // ======================================================================================
 
-    // ====================================================================
-    // ENDPOINTS CRUD
-
-    /**
-     * POST /api/productos -> Crear producto. Retorna 201 Created.
-     */
+    @Operation(summary = "Crear producto",
+            description = "Crea un nuevo producto válido y retorna el producto creado.",
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "Producto creado exitosamente",
+                            content = @Content(schema = @Schema(implementation = ProductoResponseDTO.class))),
+                    @ApiResponse(responseCode = "400", description = "Datos inválidos enviados",
+                            content = @Content)
+            })
     @PostMapping
-    public ResponseEntity<ProductoResponseDTO> crearProducto(@Valid @RequestBody ProductoDTO productoDTO) {
-        // 1. Convertir DTO a Entidad
-        Producto nuevoProducto = convertToEntity(productoDTO);
+    public ResponseEntity<ProductoResponseDTO> crearProducto(
+            @Valid @RequestBody ProductoDTO productoDTO) {
 
-        // 2. Guardar en el servicio
+        Producto nuevoProducto = convertToEntity(productoDTO);
         Producto productoGuardado = service.crearProducto(nuevoProducto);
 
-        // 3. Convertir Entidad a ResponseDTO y retornar 201 CREATED
-        ProductoResponseDTO responseDTO = convertToDto(productoGuardado);
-        return new ResponseEntity<>(responseDTO, HttpStatus.CREATED); // Código 201
+        return new ResponseEntity<>(convertToDto(productoGuardado), HttpStatus.CREATED);
     }
 
-    /**
-     * GET /api/productos -> Listar todos los productos. Retorna 200 OK.
-     */
+    @Operation(summary = "Listar productos",
+            description = "Lista todos los productos registrados.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Lista retornada con éxito")
+            })
     @GetMapping
     public ResponseEntity<List<ProductoResponseDTO>> obtenerTodos() {
         List<Producto> productos = service.obtenerTodos();
-
-        // Convertir la lista de Productos a List<ProductoResponseDTO>
-        List<ProductoResponseDTO> responseDTOs = productos.stream()
+        List<ProductoResponseDTO> response = productos.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
-
-        return ResponseEntity.ok(responseDTOs); // Código 200
+        return ResponseEntity.ok(response);
     }
 
-    /**
-     * GET /api/productos/{id} -> Obtener producto por ID. Retorna 200 OK o 404.
-     */
+    @Operation(summary = "Obtener producto por ID",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Producto encontrado",
+                            content = @Content(schema = @Schema(implementation = ProductoResponseDTO.class))),
+                    @ApiResponse(responseCode = "404", description = "Producto no encontrado")
+            })
     @GetMapping("/{id}")
     public ResponseEntity<ProductoResponseDTO> obtenerPorId(@PathVariable Long id) {
         return service.obtenerPorId(id)
-                .map(this::convertToDto)
-                // Si no se encuentra, la Parte 5 lanzará ProductoNotFoundException y se mapeará a 404
-                .map(ResponseEntity::ok)
-                // Temporalmente, si no existe retorna 404 (esto será mejorado en la Parte 5)
+                .map(producto -> ResponseEntity.ok(convertToDto(producto)))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    /**
-     * GET /api/productos/categoria/{categoria} -> Filtrar por categoría. Retorna 200 OK.
-     */
+    @Operation(summary = "Obtener productos por categoría",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Productos filtrados correctamente")
+            })
     @GetMapping("/categoria/{categoria}")
-    public ResponseEntity<List<ProductoResponseDTO>> obtenerPorCategoria(@PathVariable Categoria categoria) {
-        List<Producto> productos = service.obtenerPorCategoria(categoria);
+    public ResponseEntity<List<ProductoResponseDTO>> obtenerPorCategoria(
+            @PathVariable Categoria categoria) {
 
-        List<ProductoResponseDTO> responseDTOs = productos.stream()
+        List<Producto> productos = service.obtenerPorCategoria(categoria);
+        List<ProductoResponseDTO> response = productos.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(responseDTOs); // Código 200
+        return ResponseEntity.ok(response);
     }
 
-    /**
-     * PUT /api/productos/{id} -> Actualizar producto completo. Retorna 200 OK.
-     */
+    @Operation(summary = "Actualizar producto completamente",
+            description = "Actualiza todos los datos de un producto existente.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Producto actualizado"),
+                    @ApiResponse(responseCode = "404", description = "Producto no encontrado")
+            })
     @PutMapping("/{id}")
-    public ResponseEntity<ProductoResponseDTO> actualizarProducto(@PathVariable Long id,
-                                                                  @Valid @RequestBody ProductoDTO productoDTO) {
-        // 1. Convertir DTO a Entidad
-        Producto productoAActualizar = convertToEntity(productoDTO);
+    public ResponseEntity<ProductoResponseDTO> actualizarProducto(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductoDTO productoDTO) {
 
-        // 2. Actualizar en el servicio (el servicio maneja la validación de existencia)
-        Producto productoActualizado = service.actualizarProducto(id, productoAActualizar);
-
-        // 3. Convertir Entidad a ResponseDTO y retornar 200 OK
-        ProductoResponseDTO responseDTO = convertToDto(productoActualizado);
-        return ResponseEntity.ok(responseDTO); // Código 200
+        Producto productoActualizado = service.actualizarProducto(id, convertToEntity(productoDTO));
+        return ResponseEntity.ok(convertToDto(productoActualizado));
     }
 
-    /**
-     * PATCH /api/productos/{id}/stock -> Actualizar solo el stock. Retorna 200 OK.
-     */
+    @Operation(summary = "Actualizar stock",
+            description = "Actualiza únicamente el stock de un producto.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Stock actualizado"),
+                    @ApiResponse(responseCode = "404", description = "Producto no encontrado"),
+                    @ApiResponse(responseCode = "400", description = "Stock inválido")
+            })
     @PatchMapping("/{id}/stock")
-    public ResponseEntity<ProductoResponseDTO> actualizarStock(@PathVariable Long id,
-                                                               @Valid @RequestBody ActualizarStockDTO stockDTO) {
+    public ResponseEntity<ProductoResponseDTO> actualizarStock(
+            @PathVariable Long id,
+            @Valid @RequestBody ActualizarStockDTO stockDTO) {
 
-        // 1. Actualizar stock en el servicio
         Producto productoActualizado = service.actualizarStock(id, stockDTO.getStock());
-
-        // 2. Convertir Entidad a ResponseDTO y retornar 200 OK
-        ProductoResponseDTO responseDTO = convertToDto(productoActualizado);
-        return ResponseEntity.ok(responseDTO); // Código 200
+        return ResponseEntity.ok(convertToDto(productoActualizado));
     }
 
-    /**
-     * DELETE /api/productos/{id} -> Eliminar producto. Retorna 204 No Content.
-     */
+    @Operation(summary = "Eliminar producto",
+            description = "Elimina un producto por ID.",
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "Producto eliminado"),
+                    @ApiResponse(responseCode = "404", description = "Producto no encontrado")
+            })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarProducto(@PathVariable Long id) {
         service.eliminarProducto(id);
-        // Retorna 204 NO CONTENT
         return ResponseEntity.noContent().build();
     }
 }

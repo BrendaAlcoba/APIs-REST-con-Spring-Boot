@@ -1,5 +1,6 @@
 package com.utn.productos_api.service;
 
+import com.utn.productos_api.exception.ProductoNotFoundException;
 import com.utn.productos_api.model.Producto;
 import com.utn.productos_api.model.Categoria;
 import com.utn.productos_api.repository.ProductoRepository;
@@ -59,8 +60,7 @@ public class ProductoService {
     public Producto actualizarStock(Long id, Integer nuevoStock) {
         // Valida que el producto exista
         Producto productoExistente = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Producto no encontrado. Lanzar ProductoNotFoundException en Parte 5."));
-
+                .orElseThrow(() -> new ProductoNotFoundException(id));
         // El StockInsuficienteException opcional se puede implementar aquí,
         // pero la validación mínima se hace en el DTO (Parte 3).
         productoExistente.setStock(nuevoStock);

@@ -15,24 +15,25 @@ public class ProductoDTO {
     @Size(min = 3, max = 100, message = "El nombre debe tener entre 3 y 100 caracteres")
     private String nombre;
 
-    // Descripción: longitud máxima 500 caracteres [cite: 285]
+    // Descripción: longitud máxima 500 caracteres
     @Schema(description = "Descripción detallada del producto", example = "Equipo móvil de alta gama con cámara 108MP") // Nuevo
     @Size(max = 500, message = "La descripción no debe superar los 500 caracteres")
     private String descripcion;
 
-    // Precio: no nulo, valor mínimo 0.01 [cite: 286]
-    @NotNull(message = "El precio es obligatorio")
+    // Precio: no nulo, valor mínimo 0.01
+    @Schema(description = "Precio del producto en pesos", example = "199.99", required = true)
     @NotNull(message = "El precio es obligatorio")
     @DecimalMin(value = "0.01", message = "El precio mínimo debe ser 0.01")
     private Double precio;
 
-
     // Stock: no nulo, valor mínimo 0 [cite: 287]
+    @Schema(description = "Cantidad disponible en stock", example = "10", required = true)
     @NotNull(message = "El stock es obligatorio")
     @Min(value = 0, message = "El stock no puede ser negativo")
     private Integer stock;
 
     // Categoría: no nula [cite: 287]
+    @Schema(description = "Categoría del producto", example = "ELECTRONICA", required = true)
     @NotNull(message = "La categoría es obligatoria")
     private Categoria categoria;
 }
